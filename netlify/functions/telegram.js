@@ -1,42 +1,75 @@
-
 const crypto = require("crypto");
 
-function reply(statusCode, body) {
-  return {
-    statusCode,
-    headers: {
-      "Content-Type": "application/json",
-      "Cache-Control": "no-store"
-    },
-    body: JSON.stringify(body)
+exports.handler = async (event) => {
+  const headers = {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": "*",
   };
-}
 
-function verifyTelegramInitData(initData, botToken) {
-  if (typeof initData !== "string" || !initData) {
-    return { ok: false, reason: "INIT_DATA_MISSING" };
+  if (event.httpMethod === "OPTIONS") {
+    return {
+      statusCode: 200,
+      headers,
+      body: "",
+    };
   }
 
-  if (!botToken) {
-    return { ok: false, reason: "BOT_TOKEN_MISSING" };
+  if (event.httpMethod !== "POST") {
+    return {
+      statusCode: 405,
+      headers,
+      body: JSON.stringify({
+        ok: false,
+        error: "METHOD_NOT_ALLOWED",
+      }),
+    };
   }
 
   try {
+    const botToken = process.env.BOT_TOKEN;
+
+    if (!botToken) {
+      throw new Error("BOT_TOKEN_MISSING");
+    }
+
+    const body = JSON.parse(event.body || "{}");
+    const initData = body.initData;
+
+    if (!initData || typeof initData !== "string") {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({
+          ok: false,
+          error: "INIT_DATA_MISSING",
+        }),
+      };
+    }
+
     const params = new URLSearchParams(initData);
     const receivedHash = params.get("hash");
 
     if (!receivedHash || !/^[a-f0-9]{64}$/i.test(receivedHash)) {
-      return { ok: false, reason: "HASH_MISSING_OR_INVALID" };
+      return {
+        statusCode: 401,
+        headers,
+        body: JSON.stringify({
+          ok: false,
+          error: "HASH_MISSING_OR_INVALID",
+        }),
+      };
     }
 
+    // Remove only the hash field.
     params.delete("hash");
-    params.delete("signature");
 
+    // Sort fields and build Telegram's data-check string.
     const dataCheckString = [...params.entries()]
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([key, value]) => `${key}=${value}`)
       .join("\n");
 
+    // Telegram Web App HMAC verification.
     const secretKey = crypto
       .createHmac("sha256", "WebAppData")
       .update(botToken)
@@ -45,93 +78,81 @@ function verifyTelegramInitData(initData, botToken) {
     const calculatedHash = crypto
       .createHmac("sha256", secretKey)
       .update(dataCheckString)
-      .digest();
+      .digest("hex");
 
-    const receivedBuffer = Buffer.from(receivedHash, "hex");
+    const received = Buffer.from(receivedHash, "hex");
+    const calculated = Buffer.from(calculatedHash, "hex");
 
     if (
-      receivedBuffer.length !== calculatedHash.length ||
-      !crypto.timingSafeEqual(receivedBuffer, calculatedHash)
+      received.length !== calculated.length ||
+      !crypto.timingSafeEqual(received, calculated)
     ) {
-      return { ok: false, reason: "HASH_MISMATCH" };
+      return {
+        statusCode: 401,
+        headers,
+        body: JSON.stringify({
+          ok: false,
+          error: "HASH_MISMATCH",
+        }),
+      };
     }
 
+    // Reject old authentication data.
     const authDate = Number(params.get("auth_date"));
     const now = Math.floor(Date.now() / 1000);
 
-    if (!Number.isSafeInteger(authDate) || authDate <= 0) {
-      return { ok: false, reason: "AUTH_DATE_INVALID" };
+    if (
+      !Number.isFinite(authDate) ||
+      authDate <= 0 ||
+      now - authDate > 3600 ||
+      authDate > now + 30
+    ) {
+      return {
+        statusCode: 401,
+        headers,
+        body: JSON.stringify({
+          ok: false,
+          error: "AUTH_DATE_INVALID_OR_EXPIRED",
+        }),
+      };
     }
 
-    if (now - authDate > 3600 || authDate > now + 60) {
-      return { ok: false, reason: "AUTH_DATA_EXPIRED_OR_FUTURE" };
+    const userValue = params.get("user");
+
+    if (!userValue) {
+      return {
+        statusCode: 401,
+        headers,
+        body: JSON.stringify({
+          ok: false,
+          error: "TELEGRAM_USER_MISSING",
+        }),
+      };
     }
 
-    const user = JSON.parse(params.get("user") || "null");
+    const user = JSON.parse(userValue);
 
-    if (!user || !Number.isSafeInteger(user.id) || user.id <= 0) {
-      return { ok: false, reason: "USER_DATA_INVALID" };
-    }
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({
+        ok: true,
+        user,
+      }),
+    };
+  } catch (error) {
+    console.error("Telegram verification error:", error.message);
 
-    return { ok: true, user };
-  } catch {
-    return { ok: false, reason: "INIT_DATA_PARSE_ERROR" };
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({
+        ok: false,
+        error:
+          error.message === "BOT_TOKEN_MISSING"
+            ? "BOT_TOKEN_MISSING"
+            : "SERVER_ERROR",
+      }),
+    };
   }
-}
-
-exports.handler = async (event) => {
-  if (event.httpMethod !== "POST") {
-    return reply(405, {
-      ok: false,
-      error: "POST required"
-    });
-  }
-
-  let body;
-
-  try {
-    body = JSON.parse(event.body || "{}");
-  } catch {
-    return reply(400, {
-      ok: false,
-      error: "Invalid JSON"
-    });
-  }
-
-  const botToken = process.env.BOT_TOKEN;
-
-  if (!botToken) {
-    return reply(500, {
-      ok: false,
-      error: "Server configuration incomplete",
-      code: "BOT_TOKEN_MISSING"
-    });
-  }
-
-  const verification = verifyTelegramInitData(
-    body.initData,
-    botToken
-  );
-
-  if (!verification.ok) {
-    const statusCode =
-      verification.reason === "INIT_DATA_MISSING" ? 400 : 401;
-
-    return reply(statusCode, {
-      ok: false,
-      error: "Telegram verification failed",
-      code: verification.reason
-    });
-  }
-
-  const user = verification.user;
-
-  return reply(200, {
-    ok: true,
-    user: {
-      id: user.id,
-      first_name: user.first_name || "",
-      username: user.username || ""
-    }
-  });
 };

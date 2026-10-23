@@ -1,3 +1,4 @@
+
 const crypto = require("crypto");
 
 function reply(statusCode, body) {
@@ -5,9 +6,9 @@ function reply(statusCode, body) {
     statusCode,
     headers: {
       "Content-Type": "application/json",
-      "Cache-Control": "no-store",
+      "Cache-Control": "no-store"
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify(body)
   };
 }
 
@@ -58,10 +59,7 @@ function verifyTelegramInitData(initData, botToken) {
     const authDate = Number(params.get("auth_date"));
     const now = Math.floor(Date.now() / 1000);
 
-    if (
-      !Number.isSafeInteger(authDate) ||
-      authDate <= 0
-    ) {
+    if (!Number.isSafeInteger(authDate) || authDate <= 0) {
       return { ok: false, reason: "AUTH_DATE_INVALID" };
     }
 
@@ -71,11 +69,7 @@ function verifyTelegramInitData(initData, botToken) {
 
     const user = JSON.parse(params.get("user") || "null");
 
-    if (
-      !user ||
-      !Number.isSafeInteger(user.id) ||
-      user.id <= 0
-    ) {
+    if (!user || !Number.isSafeInteger(user.id) || user.id <= 0) {
       return { ok: false, reason: "USER_DATA_INVALID" };
     }
 
@@ -89,7 +83,7 @@ exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
     return reply(405, {
       ok: false,
-      error: "POST required",
+      error: "POST required"
     });
   }
 
@@ -100,7 +94,7 @@ exports.handler = async (event) => {
   } catch {
     return reply(400, {
       ok: false,
-      error: "Invalid JSON",
+      error: "Invalid JSON"
     });
   }
 
@@ -110,7 +104,7 @@ exports.handler = async (event) => {
     return reply(500, {
       ok: false,
       error: "Server configuration incomplete",
-      code: "BOT_TOKEN_MISSING",
+      code: "BOT_TOKEN_MISSING"
     });
   }
 
@@ -126,7 +120,7 @@ exports.handler = async (event) => {
     return reply(statusCode, {
       ok: false,
       error: "Telegram verification failed",
-      code: verification.reason,
+      code: verification.reason
     });
   }
 
@@ -137,7 +131,7 @@ exports.handler = async (event) => {
     user: {
       id: user.id,
       first_name: user.first_name || "",
-      username: user.username || "",
-    },
+      username: user.username || ""
+    }
   });
 };

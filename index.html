@@ -3,15 +3,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <meta name="theme-color" content="#fffaf6">
   <title>TaskFlow - Earn Rewards</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
-
   <header class="top">
     <div class="logo">T</div>
     <div class="brand">
@@ -21,73 +19,66 @@
     <div class="status">● Online</div>
   </header>
 
-  <main>
-    <section class="welcome">
-      <p>WELCOME BACK 👋</p>
-      <h2 id="greeting">Hello, User!</h2>
-      <span>Complete tasks and earn rewards.</span>
-    </section>
-
-    <section class="balance">
-      <div class="balance-top">
-        <span>Total Balance</span>
-        <span class="wallet-icon">◈</span>
-      </div>
-      <h1 id="balance">$0.00</h1>
-      <span class="demo-note">Demo balance · Not withdrawable</span>
-    </section>
-
-    <div class="section-heading">
-      <h3>Quick Access</h3>
-      <span>Explore</span>
+  <div class="balance-bar">
+    <div>
+      <span class="balance-label">My Balance</span>
+      <strong id="balance">$0.00</strong>
     </div>
+    <span class="demo-note">Demo balance</span>
+  </div>
 
-    <section class="cards">
-      <button class="action-card"
-              onclick="showPage('referral')">
-        <span class="card-icon">👥</span>
-        <strong>Referral</strong>
-        <small>Invite & earn</small>
-      </button>
+  <p id="verificationStatus" class="verification-status">
+    Connecting to Telegram...
+  </p>
 
-      <button class="action-card"
-              onclick="showPage('tasks')">
-        <span class="card-icon">📋</span>
-        <strong>Tasks</strong>
-        <small>Complete tasks</small>
-      </button>
+  <main>
+    <section id="home" class="page">
+      <section class="welcome">
+        <p>WELCOME BACK</p>
+        <h2 id="greeting">Hello, User!</h2>
+        <span>Complete tasks and earn rewards.</span>
+      </section>
 
-      <button class="action-card"
-              onclick="showPage('ads')">
-        <span class="card-icon">▶️</span>
-        <strong>Watch Ads</strong>
-        <small>Earn rewards</small>
-      </button>
-
-      <button class="action-card"
-              onclick="showPage('profile')">
-        <span class="card-icon">👤</span>
-        <strong>Profile</strong>
-        <small>Your account</small>
-      </button>
-    </section>
-
-    <section id="home" class="panel">
       <div class="section-heading">
-        <h3>Start Earning</h3>
-        <span class="pill">Explore</span>
+        <h3>Quick Access</h3>
+        <span>Explore</span>
       </div>
-      <p class="description">
-        Discover available tasks and manage your rewards
-        from one simple dashboard.
-      </p>
-      <button class="primary"
-              onclick="showPage('tasks')">
-        Explore Tasks <span>→</span>
-      </button>
+
+      <section class="cards">
+        <button class="action-card" onclick="showPage('referral')">
+          <span class="card-icon">👥</span>
+          <strong>Referral</strong>
+          <small>Invite & earn</small>
+        </button>
+        <button class="action-card" onclick="showPage('tasks')">
+          <span class="card-icon">📋</span>
+          <strong>Tasks</strong>
+          <small>Complete tasks</small>
+        </button>
+        <button class="action-card" onclick="showPage('ads')">
+          <span class="card-icon">▶️</span>
+          <strong>Watch Ads</strong>
+          <small>Earn rewards</small>
+        </button>
+        <button class="action-card" onclick="showPage('profile')">
+          <span class="card-icon">👤</span>
+          <strong>Profile</strong>
+          <small>Your account</small>
+        </button>
+      </section>
+
+      <section class="panel">
+        <h3>Start Earning</h3>
+        <p class="description">
+          Explore tasks and manage your rewards from one place.
+        </p>
+        <button class="primary" onclick="showPage('tasks')">
+          Explore Tasks →
+        </button>
+      </section>
     </section>
 
-    <section id="referral" class="panel hidden">
+    <section id="referral" class="page hidden">
       <div class="page-icon">👥</div>
       <h3>Refer & Earn</h3>
       <p class="description">
@@ -98,34 +89,35 @@
         <strong>$0.02</strong>
       </div>
       <p class="muted">
-        Referral tracking will be enabled after backend setup.
+        Referral tracking is not active yet. Rewards are not currently credited.
       </p>
     </section>
 
-    <section id="tasks" class="panel hidden">
+    <section id="tasks" class="page hidden">
       <div class="section-heading">
-        <h3>Tasks</h3>
+        <h3>Available Tasks</h3>
         <span class="pill">Task Center</span>
       </div>
       <p class="description">
-        View available approved tasks and submit your own task.
+        Complete approved tasks or submit your own task for admin review.
       </p>
-      <button class="primary"
-              onclick="showPage('addtask')">
+      <button class="primary" onclick="showPage('addtask')">
         ＋ Add Your Task
       </button>
+
       <div class="empty-state">
         <div>📋</div>
-        <strong>No tasks loaded yet</strong>
-        <p>Approved tasks will appear here.</p>
+        <strong>No tasks available yet</strong>
+        <p>Approved tasks will appear here when connected to the backend.</p>
       </div>
     </section>
 
-    <section id="addtask" class="panel hidden">
+    <section id="addtask" class="page hidden">
+      <button class="back-button" onclick="showPage('tasks')">← Back to Tasks</button>
       <div class="page-icon">📝</div>
       <h3>Add Your Task</h3>
       <p class="description">
-        Submit a task for admin review.
+        Submit a task request for admin review.
       </p>
       <div class="info-card">
         <span>Up to 2,000 members</span>
@@ -136,16 +128,16 @@
         <strong>$6.00</strong>
       </div>
       <p class="muted">
-        Payment verification and task submission
-        will be enabled by the backend.
+        Task submission and payment verification are not active yet.
+        Do not send payment until the secure submission system is ready.
       </p>
     </section>
 
-    <section id="ads" class="panel hidden">
+    <section id="ads" class="page hidden">
       <div class="page-icon">▶️</div>
       <h3>Watch Ads & Earn</h3>
       <p class="description">
-        Earn rewards for eligible, verified ad completions.
+        Rewards require a compatible ad provider and verified ad completion.
       </p>
       <div class="info-card">
         <span>Reward per verified ad</span>
@@ -156,15 +148,14 @@
         <strong>100</strong>
       </div>
       <p class="muted">
-        Ads are not active until a compatible ad provider
-        and completion verification are configured.
+        Ads are not active yet. No ad rewards are being credited.
       </p>
     </section>
 
-    <section id="profile" class="panel hidden">
+    <section id="profile" class="page hidden">
       <div class="page-icon">👤</div>
       <h3>My Profile</h3>
-      <p id="username" class="description">Telegram user</p>
+      <p id="username" class="description">Checking Telegram account...</p>
 
       <div class="info-card">
         <span>Minimum withdrawal</span>
@@ -174,38 +165,26 @@
         <span>Required eligible referrals</span>
         <strong>5</strong>
       </div>
-
       <p class="muted">
-        Withdrawals and wallet settings will be enabled
-        after secure backend setup.
+        Withdrawals and wallet settings are not active yet.
       </p>
     </section>
   </main>
 
   <nav class="bottom">
-    <button class="nav-button active"
-            data-page="home"
-            onclick="showPage('home', this)">
+    <button class="nav-button active" data-page="home" onclick="showPage('home', this)">
       <span>⌂</span><small>Home</small>
     </button>
-    <button class="nav-button"
-            data-page="referral"
-            onclick="showPage('referral', this)">
+    <button class="nav-button" data-page="referral" onclick="showPage('referral', this)">
       <span>♧</span><small>Referral</small>
     </button>
-    <button class="nav-button"
-            data-page="tasks"
-            onclick="showPage('tasks', this)">
+    <button class="nav-button" data-page="tasks" onclick="showPage('tasks', this)">
       <span>▤</span><small>Task</small>
     </button>
-    <button class="nav-button"
-            data-page="ads"
-            onclick="showPage('ads', this)">
+    <button class="nav-button" data-page="ads" onclick="showPage('ads', this)">
       <span>▷</span><small>Ads</small>
     </button>
-    <button class="nav-button"
-            data-page="profile"
-            onclick="showPage('profile', this)">
+    <button class="nav-button" data-page="profile" onclick="showPage('profile', this)">
       <span>○</span><small>Profile</small>
     </button>
   </nav>

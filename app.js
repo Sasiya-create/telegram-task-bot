@@ -1,28 +1,93 @@
 
 const tg = window.Telegram?.WebApp;
 
-if (tg) {
-  tg.ready();
-  tg.expand();
+let verifiedTelegramUser = null;
+let telegramVerificationStatus = "not_started";
 
-  // Display Telegram user information only.
-  // Server authentication must validate tg.initData.
-  const user = tg.initDataUnsafe?.user;
+async function verifyTelegramUser() {
+  const greeting = document.getElementById("greeting");
+  const username = document.getElementById("username");
 
-  if (user) {
-    const greeting = document.getElementById("greeting");
-    const username = document.getElementById("username");
+  if (!tg) {
+    telegramVerificationStatus = "unavailable";
 
     if (greeting) {
-      greeting.textContent =
-        "Hello, " + (user.first_name || "User") + "!";
+      greeting.textContent = "Please open this app in Telegram.";
     }
 
     if (username) {
-      username.textContent = user.username
-        ? "@" + user.username
-        : user.first_name || "Telegram user";
+      username.textContent = "Telegram required";
     }
+
+    return;
+  }
+
+  tg.ready();
+  tg.expand();
+
+  if (greeting) {
+    greeting.textContent = "Verifying your Telegram account...";
+  }
+
+  if (username) {
+    username.textContent = "";
+  }
+
+  try {
+    if (!tg.initData) {
+      throw new Error("Telegram authentication data is missing.");
+    }
+
+    const response = await fetch(
+      "/.netlify/functions/telegram",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          initData: tg.initData
+        })
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || !result.ok || !result.user) {
+      throw new Error(
+        result.error || "Telegram verification failed."
+      );
+    }
+
+    verifiedTelegramUser = result.user;
+    telegramVerificationStatus = "verified";
+
+    if (greeting) {
+      greeting.textContent =
+        "Hello, " +
+        (result.user.first_name || "User") +
+        "!";
+    }
+
+    if (username) {
+      username.textContent = result.user.username
+        ? "@" + result.user.username
+        : result.user.first_name || "Telegram user";
+    }
+  } catch (error) {
+    verifiedTelegramUser = null;
+    telegramVerificationStatus = "failed";
+
+    if (greeting) {
+      greeting.textContent = "Unable to verify your account.";
+    }
+
+    if (username) {
+      username.textContent =
+        "Please reopen the app through Telegram and try again.";
+    }
+
+    console.error("Telegram verification error:", error);
   }
 }
 
@@ -61,5 +126,10 @@ function showPage(page, button) {
     button.classList.add("active");
   }
 
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
 }
+
+verifyTelegramUser();

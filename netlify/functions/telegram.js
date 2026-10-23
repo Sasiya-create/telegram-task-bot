@@ -13,23 +13,20 @@ function reply(statusCode, body) {
 }
 
 function verifyTelegramInitData(initData, botToken) {
-  if (
-    typeof initData !== "string" ||
-    !initData ||
-    !botToken
-  ) {
-    return null;
+  if (typeof initData !== "string" || !initData) {
+    return { ok: false, reason: "INIT_DATA_MISSING" };
+  }
+
+  if (!botToken) {
+    return { ok: false, reason: "BOT_TOKEN_MISSING" };
   }
 
   try {
     const params = new URLSearchParams(initData);
     const receivedHash = params.get("hash");
 
-    if (
-      !receivedHash ||
-      !/^[a-f0-9]{64}$/i.test(receivedHash)
-    ) {
-      return null;
+    if (!receivedHash || !/^[a-f0-9]{64}$/i.test(receivedHash)) {
+      return { ok: false, reason: "HASH_MISSING_OR_INVALID" };
     }
 
     params.delete("hash");
@@ -50,19 +47,13 @@ function verifyTelegramInitData(initData, botToken) {
       .update(dataCheckString)
       .digest();
 
-    const receivedBuffer = Buffer.from(
-      receivedHash,
-      "hex"
-    );
+    const receivedBuffer = Buffer.from(receivedHash, "hex");
 
     if (
       receivedBuffer.length !== calculatedHash.length ||
-      !crypto.timingSafeEqual(
-        receivedBuffer,
-        calculatedHash
-      )
+      !crypto.timingSafeEqual(receivedBuffer, calculatedHash)
     ) {
-      return null;
+      return { ok: false, reason: "HASH_MISMATCH" };
     }
 
     const authDate = Number(params.get("auth_date"));
@@ -70,28 +61,28 @@ function verifyTelegramInitData(initData, botToken) {
 
     if (
       !Number.isSafeInteger(authDate) ||
-      authDate <= 0 ||
-      now - authDate > 3600 ||
-      authDate > now + 60
+      authDate <= 0
     ) {
-      return null;
+      return { ok: false, reason: "AUTH_DATE_INVALID" };
     }
 
-    const user = JSON.parse(
-      params.get("user") || "null"
-    );
+    if (now - authDate > 3600 || authDate > now + 60) {
+      return { ok: false, reason: "AUTH_DATA_EXPIRED_OR_FUTURE" };
+    }
+
+    const user = JSON.parse(params.get("user") || "null");
 
     if (
       !user ||
       !Number.isSafeInteger(user.id) ||
       user.id <= 0
     ) {
-      return null;
+      return { ok: false, reason: "USER_DATA_INVALID" };
     }
 
-    return user;
+    return { ok: true, user };
   } catch {
-    return null;
+    return { ok: false, reason: "INIT_DATA_PARSE_ERROR" };
   }
 }
 
@@ -120,20 +111,27 @@ exports.handler = async (event) => {
     return reply(500, {
       ok: false,
       error: "Server configuration incomplete",
+      code: "BOT_TOKEN_MISSING",
     });
   }
 
-  const user = verifyTelegramInitData(
+  const verification = verifyTelegramInitData(
     body.initData,
     botToken
   );
 
-  if (!user) {
-    return reply(401, {
+  if (!verification.ok) {
+    const statusCode =
+      verification.reason === "INIT_DATA_MISSING" ? 400 : 401;
+
+    return reply(statusCode, {
       ok: false,
       error: "Telegram verification failed",
+      code: verification.reason,
     });
   }
+
+  const user = verification.user;
 
   return reply(200, {
     ok: true,

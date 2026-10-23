@@ -34,28 +34,39 @@ async function verifyTelegramUser() {
   }
 
   try {
-    if (!tg.initData) {
-      throw new Error("Telegram authentication data is missing.");
+    if (!tg.initData || !tg.initData.trim()) {
+      throw new Error("INIT_DATA_MISSING (Telegram data unavailable)");
     }
 
-    const response = await fetch(
-      "/.netlify/functions/telegram",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          initData: tg.initData
-        })
-      }
-    );
+    const response = await fetch("/.netlify/functions/telegram", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      cache: "no-store",
+      body: JSON.stringify({
+        initData: tg.initData
+      })
+    });
 
-    const result = await response.json();
+    let result;
+
+    try {
+      result = await response.json();
+    } catch {
+      throw new Error(
+        "INVALID_SERVER_RESPONSE (HTTP " + response.status + ")"
+      );
+    }
 
     if (!response.ok || !result.ok || !result.user) {
+      const errorCode =
+        result.code ||
+        result.error ||
+        "UNKNOWN_VERIFICATION_ERROR";
+
       throw new Error(
-        result.error || "Telegram verification failed."
+        errorCode + " (HTTP " + response.status + ")"
       );
     }
 
@@ -64,9 +75,7 @@ async function verifyTelegramUser() {
 
     if (greeting) {
       greeting.textContent =
-        "Hello, " +
-        (result.user.first_name || "User") +
-        "!";
+        "Hello, " + (result.user.first_name || "User") + "!";
     }
 
     if (username) {
@@ -74,6 +83,7 @@ async function verifyTelegramUser() {
         ? "@" + result.user.username
         : result.user.first_name || "Telegram user";
     }
+
   } catch (error) {
     verifiedTelegramUser = null;
     telegramVerificationStatus = "failed";
@@ -84,10 +94,11 @@ async function verifyTelegramUser() {
 
     if (username) {
       username.textContent =
-        "Please reopen the app through Telegram and try again.";
+        error.message || "Verification failed. Please try again.";
     }
 
-    console.error("Telegram verification error:", error);
+    // Do not log initData, bot tokens, or other secrets.
+    console.error("Telegram verification failed:", error.message);
   }
 }
 

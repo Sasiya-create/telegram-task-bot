@@ -1,0 +1,215 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="theme-color" content="#fffaf6">
+  <title>TaskFlow - Earn Rewards</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+
+  <header class="top">
+    <div class="logo">T</div>
+    <div class="brand">
+      <h2>TaskFlow</h2>
+      <p>Task & Earn</p>
+    </div>
+    <div class="status">● Online</div>
+  </header>
+
+  <main>
+    <section class="welcome">
+      <p>WELCOME BACK 👋</p>
+      <h2 id="greeting">Hello, User!</h2>
+      <span>Complete tasks and earn rewards.</span>
+    </section>
+
+    <section class="balance">
+      <div class="balance-top">
+        <span>Total Balance</span>
+        <span class="wallet-icon">◈</span>
+      </div>
+      <h1 id="balance">$0.00</h1>
+      <span class="demo-note">Demo balance · Not withdrawable</span>
+    </section>
+
+    <div class="section-heading">
+      <h3>Quick Access</h3>
+      <span>Explore</span>
+    </div>
+
+    <section class="cards">
+      <button class="action-card"
+              onclick="showPage('referral')">
+        <span class="card-icon">👥</span>
+        <strong>Referral</strong>
+        <small>Invite & earn</small>
+      </button>
+
+      <button class="action-card"
+              onclick="showPage('tasks')">
+        <span class="card-icon">📋</span>
+        <strong>Tasks</strong>
+        <small>Complete tasks</small>
+      </button>
+
+      <button class="action-card"
+              onclick="showPage('ads')">
+        <span class="card-icon">▶️</span>
+        <strong>Watch Ads</strong>
+        <small>Earn rewards</small>
+      </button>
+
+      <button class="action-card"
+              onclick="showPage('profile')">
+        <span class="card-icon">👤</span>
+        <strong>Profile</strong>
+        <small>Your account</small>
+      </button>
+    </section>
+
+    <section id="home" class="panel">
+      <div class="section-heading">
+        <h3>Start Earning</h3>
+        <span class="pill">Explore</span>
+      </div>
+      <p class="description">
+        Discover available tasks and manage your rewards
+        from one simple dashboard.
+      </p>
+      <button class="primary"
+              onclick="showPage('tasks')">
+        Explore Tasks <span>→</span>
+      </button>
+    </section>
+
+    <section id="referral" class="panel hidden">
+      <div class="page-icon">👥</div>
+      <h3>Refer & Earn</h3>
+      <p class="description">
+        Invite friends using your personal referral link.
+      </p>
+      <div class="info-card">
+        <span>Reward per eligible referral</span>
+        <strong>$0.02</strong>
+      </div>
+      <p class="muted">
+        Referral tracking will be enabled after backend setup.
+      </p>
+    </section>
+
+    <section id="tasks" class="panel hidden">
+      <div class="section-heading">
+        <h3>Tasks</h3>
+        <span class="pill">Task Center</span>
+      </div>
+      <p class="description">
+        View available approved tasks and submit your own task.
+      </p>
+      <button class="primary"
+              onclick="showPage('addtask')">
+        ＋ Add Your Task
+      </button>
+      <div class="empty-state">
+        <div>📋</div>
+        <strong>No tasks loaded yet</strong>
+        <p>Approved tasks will appear here.</p>
+      </div>
+    </section>
+
+    <section id="addtask" class="panel hidden">
+      <div class="page-icon">📝</div>
+      <h3>Add Your Task</h3>
+      <p class="description">
+        Submit a task for admin review.
+      </p>
+      <div class="info-card">
+        <span>Up to 2,000 members</span>
+        <strong>$4.00</strong>
+      </div>
+      <div class="info-card">
+        <span>More than 2,000 members</span>
+        <strong>$6.00</strong>
+      </div>
+      <p class="muted">
+        Payment verification and task submission
+        will be enabled by the backend.
+      </p>
+    </section>
+
+    <section id="ads" class="panel hidden">
+      <div class="page-icon">▶️</div>
+      <h3>Watch Ads & Earn</h3>
+      <p class="description">
+        Earn rewards for eligible, verified ad completions.
+      </p>
+      <div class="info-card">
+        <span>Reward per verified ad</span>
+        <strong>$0.05</strong>
+      </div>
+      <div class="info-card">
+        <span>Daily ad limit</span>
+        <strong>100</strong>
+      </div>
+      <p class="muted">
+        Ads are not active until a compatible ad provider
+        and completion verification are configured.
+      </p>
+    </section>
+
+    <section id="profile" class="panel hidden">
+      <div class="page-icon">👤</div>
+      <h3>My Profile</h3>
+      <p id="username" class="description">Telegram user</p>
+
+      <div class="info-card">
+        <span>Minimum withdrawal</span>
+        <strong>$2.00</strong>
+      </div>
+      <div class="info-card">
+        <span>Required eligible referrals</span>
+        <strong>5</strong>
+      </div>
+
+      <p class="muted">
+        Withdrawals and wallet settings will be enabled
+        after secure backend setup.
+      </p>
+    </section>
+  </main>
+
+  <nav class="bottom">
+    <button class="nav-button active"
+            data-page="home"
+            onclick="showPage('home', this)">
+      <span>⌂</span><small>Home</small>
+    </button>
+    <button class="nav-button"
+            data-page="referral"
+            onclick="showPage('referral', this)">
+      <span>♧</span><small>Referral</small>
+    </button>
+    <button class="nav-button"
+            data-page="tasks"
+            onclick="showPage('tasks', this)">
+      <span>▤</span><small>Task</small>
+    </button>
+    <button class="nav-button"
+            data-page="ads"
+            onclick="showPage('ads', this)">
+      <span>▷</span><small>Ads</small>
+    </button>
+    <button class="nav-button"
+            data-page="profile"
+            onclick="showPage('profile', this)">
+      <span>○</span><small>Profile</small>
+    </button>
+  </nav>
+
+  <script src="app.js"></script>
+</body>
+</html>

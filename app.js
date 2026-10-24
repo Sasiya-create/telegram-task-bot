@@ -1,16 +1,76 @@
-
 const tg = window.Telegram?.WebApp;
 
 let verifiedTelegramUser = null;
 let telegramVerificationStatus = "not_started";
+let walletBalance = null;
 
 function setVerificationMessage(message, state = "") {
   const status = document.getElementById("verificationStatus");
 
   if (status) {
     status.textContent = message;
-    status.className = "verification-status" +
-      (state ? " " + state : "");
+    status.className =
+      "verification-status" + (state ? " " + state : "");
+  }
+}
+
+function showWalletBalance(value) {
+  const balanceElement = document.getElementById("balance");
+  if (!balanceElement) return;
+
+  if (value === null || !Number.isFinite(Number(value))) {
+    balanceElement.textContent = "Unavailable";
+    return;
+  }
+
+  walletBalance = Number(value);
+  balanceElement.textContent = "$" + walletBalance.toFixed(2);
+}
+
+async function loadWalletBalance() {
+  if (!verifiedTelegramUser || !tg?.initData) return;
+
+  const balanceElement = document.getElementById("balance");
+
+  if (balanceElement) {
+    balanceElement.textContent = "Loading...";
+  }
+
+  try {
+    const response = await fetch("/.netlify/functions/wallet", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      cache: "no-store",
+      body: JSON.stringify({
+        initData: tg.initData
+      })
+    });
+
+    let result;
+
+    try {
+      result = await response.json();
+    } catch {
+      throw new Error("INVALID_SERVER_RESPONSE");
+    }
+
+    if (!response.ok || !result.ok) {
+      throw new Error(result.error || "BALANCE_LOAD_FAILED");
+    }
+
+    const balance = Number(result.balance);
+
+    if (!Number.isFinite(balance)) {
+      throw new Error("INVALID_BALANCE");
+    }
+
+    showWalletBalance(balance);
+
+  } catch (error) {
+    showWalletBalance(null);
+    console.error("Wallet balance load failed:", error.message);
   }
 }
 
@@ -28,6 +88,7 @@ async function verifyTelegramUser() {
       "Telegram Web App data is unavailable. Open this app using your bot's Telegram App button.",
       "error"
     );
+
     return;
   }
 
@@ -35,20 +96,29 @@ async function verifyTelegramUser() {
     tg.ready();
     tg.expand();
 
-    if (greeting) greeting.textContent = "Verifying your Telegram account...";
-    if (username) username.textContent = "Checking account...";
+    if (greeting) {
+      greeting.textContent = "Verifying your Telegram account...";
+    }
+
+    if (username) {
+      username.textContent = "Checking account...";
+    }
 
     setVerificationMessage("Verifying Telegram account...");
 
     if (!tg.initData || !tg.initData.trim()) {
-      throw new Error("INIT_DATA_MISSING: Telegram did not provide initData.");
+      throw new Error("INIT_DATA_MISSING");
     }
 
     const response = await fetch("/.netlify/functions/telegram", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json"
+      },
       cache: "no-store",
-      body: JSON.stringify({ initData: tg.initData })
+      body: JSON.stringify({
+        initData: tg.initData
+      })
     });
 
     let result;
@@ -56,14 +126,11 @@ async function verifyTelegramUser() {
     try {
       result = await response.json();
     } catch {
-      throw new Error(
-        "INVALID_SERVER_RESPONSE: HTTP " + response.status
-      );
+      throw new Error("INVALID_SERVER_RESPONSE");
     }
 
     if (!response.ok || !result.ok || !result.user) {
-      const code = result.code || result.error || "UNKNOWN_ERROR";
-      throw new Error(code + ": HTTP " + response.status);
+      throw new Error(result.error || "TELEGRAM_VERIFICATION_FAILED");
     }
 
     verifiedTelegramUser = result.user;
@@ -81,6 +148,8 @@ async function verifyTelegramUser() {
     }
 
     setVerificationMessage("Telegram account verified.", "success");
+
+    await loadWalletBalance();
 
   } catch (error) {
     verifiedTelegramUser = null;
@@ -101,7 +170,6 @@ async function verifyTelegramUser() {
       "error"
     );
 
-    // Never log initData, bot tokens, or secret values.
     console.error("Telegram verification failed:", message);
   }
 }
@@ -138,7 +206,10 @@ function showPage(page, button) {
     button.classList.add("active");
   }
 
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
 }
 
 verifyTelegramUser();
